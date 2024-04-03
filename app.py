@@ -28,15 +28,19 @@ root.maxsize(640, 360)
 
 # test button
 button = tk.Button(root, text="Test Button", command=print_hello)
-button.place(x=50, y=50)
+button.place(x=20, y=180)
 
 # file prompt button
-button= tk.Button(root, text="Input File", command=file_prompt)
-button.place(x=100, y=100)
+button = tk.Button(root, text="Input File", command=file_prompt)
+button.place(x=20, y=20)
+
+input_output_box = tk.Text(root, font=("Helvetica", "16"), width=49, height=4)
+input_output_box.place(x=20, y=60)
+
 
 # make a text box
-test_output = tk.Text(root, font=("Helvetica", "16"), width=49, height=6)
-test_output.place(x=20, y=200)
+test_output = tk.Text(root, font=("Helvetica", "16"), width=49, height=4)
+test_output.place(x=20, y=220)
 test_output['state'] = 'disabled'
 
 root.mainloop()
