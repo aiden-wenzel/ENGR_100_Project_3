@@ -10,13 +10,14 @@ def print_hello():
 def file_prompt():
     # Open the file dialog and get the selected file path
     file_path = filedialog.askopenfilename()
-    
+    input_output_box['state'] = 'normal'
     # Check if a file was selected
     if file_path:
-        print(f"You selected: {file_path}")
-        # Here, you can do something with the selected file path
+        input_output_box.insert(tk.END, f"You selected: {file_path}")
+    # Here, you can do something with the selected file path
     else:
-        print("No file was selected")
+        input_output_box.insert(tk.END, "No file was selected")
+    input_output_box['state'] = 'disabled'
 
 # create and title the window
 root = tk.Tk()
@@ -34,9 +35,10 @@ button.place(x=20, y=180)
 button = tk.Button(root, text="Input File", command=file_prompt)
 button.place(x=20, y=20)
 
+# file input text box
 input_output_box = tk.Text(root, font=("Helvetica", "16"), width=49, height=4)
 input_output_box.place(x=20, y=60)
-
+input_output_box['state'] = 'disabled'
 
 # make a text box
 test_output = tk.Text(root, font=("Helvetica", "16"), width=49, height=4)
