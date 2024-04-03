@@ -4,12 +4,14 @@ from tkinter import filedialog
 # TODO: remove later
 def print_hello():
     test_output['state'] = 'normal'
+    test_output.delete('1.0', tk.END)
     test_output.insert(tk.END, "Hello world!")
     test_output['state'] = 'disabled'
 
 def file_prompt():
-    file_path = filedialog.askopenfilename()
     input_output_box['state'] = 'normal'
+    input_output_box.delete('1.0', tk.END)
+    file_path = filedialog.askopenfilename()
     # Check if a file was selected
     if file_path:
         split_path = file_path.split("/", -1)
