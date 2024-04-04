@@ -27,11 +27,11 @@ def combine_tracks(path_1:str, path_2:str, mult_1=1, mult_2=1, sr=22050) -> Tupl
     
     return (y, sr)
 
-# 46.4 ms block size
-def get_mel_spectograms(y:np.array, sr:int, block_size:float, hop_size:float) -> np.array:
+# 46.4 ms block size, 11.6 ms hop size
+def get_mel_spectograms(y:np.array, sr:22050, block_size:46.4, hop_size:11.6) -> np.array:
     return librosa.power_to_db(
         librosa.feature.melspectrogram(
-            y = y.reshape((int) (y.size/sr), sr),
+            y=y,
             sr=sr,
             n_fft=int(block_size*1e-3*sr), 
             hop_length = int(hop_size*1e-3*sr), 
@@ -39,25 +39,4 @@ def get_mel_spectograms(y:np.array, sr:int, block_size:float, hop_size:float) ->
         ),
         ref=np.max
     )
-    
-
-# %%
-y, sr = combine_tracks("sample_audio_training/trumpet/0005.wav", "sample_audio_training/violin/0010.wav")
-out = get_mel_spectograms(y, sr)
-out.shape
-
-
-# %%
-librosa.display.specshow(out[2], sr=sr, x_axis='time', y_axis='mel')
-plt.colorbar(format='%+2.0f dB')
-
-# %% [markdown]
-# Model Time :)
-
-# %%
-tf.random.set_seed(22)
-
-# %%
-
-
 
