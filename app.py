@@ -5,7 +5,7 @@ from tkinter import filedialog
 def print_hello():
     test_output['state'] = 'normal'
     test_output.delete('1.0', tk.END)
-    test_output.insert(tk.END, "Hello world!")
+    test_output.insert(tk.END, "Bassoon!")
     test_output['state'] = 'disabled'
 
 def file_prompt():
