@@ -6,8 +6,10 @@ from tkinter import filedialog
 
 def main():
     curr = os.getcwd()
-    curr = curr.replace("\src", "\sample_audio_training")
-    print(curr)
+    if (os.name == "Windows"):
+        curr = curr.replace("\src", "\sample_audio_training")
+    else:
+        curr = curr.replace("/src", "/sample_audio_training")    
 
     folders = ['oboe', 'trumpet', 'violin']
     files = []
