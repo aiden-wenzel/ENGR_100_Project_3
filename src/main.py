@@ -11,6 +11,7 @@ from torch.nn import Sequential
 from torch.nn import BatchNorm2d
 from torch.nn import ELU
 from torch import flatten
+import torch
 
 class MultiLabelCNN(Module):
     def __init__(self, num_classes):
@@ -58,33 +59,13 @@ class MultiLabelCNN(Module):
 
 
 def main():
-    curr = os.getcwd()
-    if (os.name == "nt"):
-        curr = curr.replace("\src", "\sample_audio_training")
-    else:
-        curr = curr.replace("/src", "/sample_audio_training")
-
-    folders = ['oboe', 'trumpet', 'violin']
-    files = []
-    labels = []
-
-    # for folder in folders:
-    #     folderPath = os.path.join(curr, folder)
-    #     for filename in os.listdir(folderPath):
-    #         file_path = os.path.join(folderPath, filename)
-    #         if os.path.isfile(file_path):  # Make sure it's a file, not a directory or a symlink
-    #             files.append(file_path)
-    #             labels.append(folder)
-
-    # label_encoder = LabelEncoder()
-    # numeric_labels = label_encoder.fit_transform(labels)
-
-    # process_and_save_audio(files=files, labels=numeric_labels, output_path="data.npz", sr=22050, add_noise=False)
 
     # load model
     NUM_CLASSES = 3
     model = MultiLabelCNN(3)
-    
+    model.load_state_dict(torch.load("./ML/CNN/model_weights.pth"))
+    model.eval()
+
     # initiate app
     def print_hello():
         test_output['state'] = 'normal'
@@ -133,7 +114,6 @@ def main():
 
     root.mainloop()
 
-    
 if __name__ == "__main__":
     main()
     
