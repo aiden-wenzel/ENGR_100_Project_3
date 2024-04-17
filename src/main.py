@@ -3,31 +3,88 @@ from sklearn.preprocessing import LabelEncoder
 import tkinter as tk
 import os
 from tkinter import filedialog
+from torch.nn import Module
+from torch.nn import Conv2d
+from torch.nn import Linear
+from torch.nn import MaxPool2d
+from torch.nn import Sequential
+from torch.nn import BatchNorm2d
+from torch.nn import ELU
+from torch import flatten
+
+class MultiLabelCNN(Module):
+    def __init__(self, num_classes):
+        super(MultiLabelCNN, self).__init__()
+        
+        self.hidden_layers = Sequential (
+            Conv2d(in_channels=1, out_channels=64, kernel_size=(3,3)),
+            BatchNorm2d(64),
+            ELU(),
+            MaxPool2d((2,2)),
+
+            Conv2d(in_channels=64, out_channels=128, kernel_size=(3,3)),
+            BatchNorm2d(128),
+            ELU(),
+            MaxPool2d((2, 2)),
+
+            Conv2d(in_channels=128, out_channels=256, kernel_size=(3,3)),
+            BatchNorm2d(256),
+            ELU(),
+            MaxPool2d((3, 3)),
+
+            Conv2d(in_channels=256, out_channels=256, kernel_size=(3,3)),
+            BatchNorm2d(256),
+            ELU(),
+            MaxPool2d((3, 3)),
+        )
+
+        self.linear_layers = Sequential(
+            Linear(in_features=256, out_features=128),  # Adjusted input features to match flattened conv output
+            ELU(),
+            Linear(in_features=128, out_features=num_classes)
+        )
+
+    def forward(self, x):
+        # Pass input through the convolutional layers
+        x = self.hidden_layers(x)
+        
+        # Flatten the output of the convolutional layers to fit linear layer input
+        x = flatten(x, 1)  # Flatten all dimensions except the batch
+        
+        # Pass data through linear layers
+        x = self.linear_layers(x)
+        
+        return x
+
 
 def main():
     curr = os.getcwd()
-    if (os.name == "Windows"):
+    if (os.name == "nt"):
         curr = curr.replace("\src", "\sample_audio_training")
     else:
-        curr = curr.replace("/src", "/sample_audio_training")    
+        curr = curr.replace("/src", "/sample_audio_training")
 
     folders = ['oboe', 'trumpet', 'violin']
     files = []
     labels = []
 
-    for folder in folders:
-        folderPath = os.path.join(curr, folder)
-        for filename in os.listdir(folderPath):
-            file_path = os.path.join(folderPath, filename)
-            if os.path.isfile(file_path):  # Make sure it's a file, not a directory or a symlink
-                files.append(file_path)
-                labels.append(folder)
+    # for folder in folders:
+    #     folderPath = os.path.join(curr, folder)
+    #     for filename in os.listdir(folderPath):
+    #         file_path = os.path.join(folderPath, filename)
+    #         if os.path.isfile(file_path):  # Make sure it's a file, not a directory or a symlink
+    #             files.append(file_path)
+    #             labels.append(folder)
 
-    label_encoder = LabelEncoder()
-    numeric_labels = label_encoder.fit_transform(labels)
+    # label_encoder = LabelEncoder()
+    # numeric_labels = label_encoder.fit_transform(labels)
 
-    process_and_save_audio(files=files, labels=numeric_labels, output_path="data.npz", sr=22050, add_noise=False)
+    # process_and_save_audio(files=files, labels=numeric_labels, output_path="data.npz", sr=22050, add_noise=False)
 
+    # load model
+    NUM_CLASSES = 3
+    model = MultiLabelCNN(3)
+    
     # initiate app
     def print_hello():
         test_output['state'] = 'normal'
@@ -75,6 +132,7 @@ def main():
     test_output['state'] = 'disabled'
 
     root.mainloop()
+
     
 if __name__ == "__main__":
     main()
