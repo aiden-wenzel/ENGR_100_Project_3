@@ -91,6 +91,7 @@ def train_model(
 ) -> Tuple[list, list]:
     train_accuracies = []
     validation_accuracies = []
+    #Start of time remaining
     start_time = time.time()
 
     for epoch in range(epochs):
@@ -131,6 +132,7 @@ def train_model(
             logging.info(f"Validation Accuracy: {validation_accuracy.item()}")
             validation_accuracies.append(validation_accuracy.item())
             
+        # Time remaining counter
         time_remaining = (epochs - (epoch+1)) * (
             time.time() - start_time
         )/(epoch+1)
