@@ -10,7 +10,7 @@ import h5py
 
 
 def combine_tracks(
-    path_1: str, path_2: str, mult_1=1, mult_2=1, sr=22050
+    path_1: str, path_2: str, mult_1=0.5, mult_2=0.5, sr=22050
 ) -> Tuple[np.array, int]:
     y_1, sr_1 = librosa.load(path_1, sr=sr)
     y_2, sr_2 = librosa.load(path_2, sr=sr)
