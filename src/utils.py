@@ -12,6 +12,19 @@ import h5py
 def combine_tracks(
     path_1: str, path_2: str, mult_1=0.5, mult_2=0.5, sr=22050
 ) -> Tuple[np.array, int]:
+    """
+    Combines two audio tracks into one by adding them together after optional scaling.
+
+    Parameters:
+    - path_1 (str): Path to the first audio file.
+    - path_2 (str): Path to the second audio file.
+    - mult_1 (float, optional): Multiplier for the first audio track's amplitude. Default is 1.
+    - mult_2 (float, optional): Multiplier for the second audio track's amplitude. Default is 1.
+    - sr (int, optional): Sampling rate to use when loading the audio files. Default is 22050 Hz.
+
+    Returns:
+    - Tuple[np.array, int]: A tuple containing the combined audio array and the sampling rate.
+    """
     y_1, sr_1 = librosa.load(path_1, sr=sr)
     y_2, sr_2 = librosa.load(path_2, sr=sr)
     if y_1.size > y_2.size:
@@ -30,6 +43,16 @@ def combine_tracks(
 
 
 def DB_spectogram(y: np.array, sr=22050) -> np.array:
+    """
+    Generates a decibel-scaled spectrogram for a given audio array.
+
+    Parameters:
+    - y (np.array): The audio signal array.
+    - sr (int, optional): Sampling rate of the audio signal. Default is 22050 Hz.
+
+    Returns:
+    - np.array: A decibel-scaled spectrogram of the input audio.
+    """
     return librosa.amplitude_to_db(
         librosa.feature.melspectrogram(
             y=y.reshape((int)(y.size / sr), sr),  # split into 1-second intervals
@@ -43,10 +66,13 @@ def DB_spectogram(y: np.array, sr=22050) -> np.array:
 def add_gaussian_noise(data: np.array, std=0.005):
     """
     Adds Gaussian noise to an array.
-    :param data: numpy array of audio data.
-    :param mean: Mean of the Gaussian noise.
-    :param std: Standard deviation of the Gaussian noise.
-    :return: Noisy numpy array.
+
+    Parameters:
+    - data (np.array): Array of audio data.
+    - std (float, optional): Standard deviation of the Gaussian noise. Default is 0.005.
+
+    Returns:
+    - np.array: Noisy version of the input array.
     """
     noise = np.random.normal(0, std, data.shape)
     return data + noise
@@ -55,6 +81,23 @@ def add_gaussian_noise(data: np.array, std=0.005):
 def process_and_save_audio_hdf5(
     files: list, labels: list, output_path: str, sr=22050, add_noise=False
 ):
+    """
+    Processes a list of audio files and their labels, and saves the resulting dataset in an HDF5 file format.
+
+    Parameters:
+    - files (list): A list of paths to directories or individual audio files to process.
+    - labels (list): A list of labels corresponding to the audio files. Each label should correspond to the directory or file in the 'files' list.
+    - output_path (str): The path where the HDF5 file will be saved.
+    - sr (int, optional): Sampling rate to be used for audio files. Default is 22050 Hz.
+    - add_noise (bool, optional): If True, adds Gaussian noise to the audio data. Default is False.
+
+    This function iterates through each audio file, generates spectrograms, optionally adds noise, and saves these features along with their labels into an HDF5 file. If the file path is a directory, it processes all audio files within that directory. The function uses a helper function to generate spectrograms and to handle audio combinations. It also calculates and stores overall dataset statistics such as mean and standard deviation for normalization purposes.
+
+    Raises:
+    - Exception: If the number of provided files and labels do not match.
+
+    The function logs the progress of data processing, including the estimated time remaining and the final completion status.
+    """
     if len(files) != len(labels):
         raise Exception("Length of files must equal labels length")
 
@@ -75,16 +118,16 @@ def process_and_save_audio_hdf5(
 
     # Open a new HDF5 file
     with h5py.File(output_path, "w") as hdf:
-        
+
         label_size = max(labels) + 1
         progress = 0
         start_time = time.time()
         sample_count = 0
-        
+
         n = 0
         mean = 0
         M2 = 0
-        
+
         for i in range(len(files_to_process)):
             for j in range(i + 1, len(files_to_process)):
                 y, y_labels = process_and_save_audio_helper(
@@ -96,47 +139,63 @@ def process_and_save_audio_hdf5(
                     add_noise=add_noise,
                 )
                 if sample_count == 0:
-                    hdf.create_dataset('features', data=y, compression="gzip", chunks=True, maxshape=(None,96,87))
-                    hdf.create_dataset('labels', data=y_labels, compression="gzip", chunks=True, maxshape=(None,3))
+                    hdf.create_dataset(
+                        "features",
+                        data=y,
+                        compression="gzip",
+                        chunks=True,
+                        maxshape=(None, 96, 87),
+                    )
+                    hdf.create_dataset(
+                        "labels",
+                        data=y_labels,
+                        compression="gzip",
+                        chunks=True,
+                        maxshape=(None, 3),
+                    )
                 else:
-                    hdf['features'].resize((hdf['features'].shape[0] + y.shape[0]), axis=0)
-                    hdf['features'][-y.shape[0]:] = y
-                    
-                    hdf['labels'].resize((hdf['labels'].shape[0] + y_labels.shape[0]), axis=0)
-                    hdf['labels'][-y_labels.shape[0]:] = y_labels
-                
+                    hdf["features"].resize(
+                        (hdf["features"].shape[0] + y.shape[0]), axis=0
+                    )
+                    hdf["features"][-y.shape[0] :] = y
+
+                    hdf["labels"].resize(
+                        (hdf["labels"].shape[0] + y_labels.shape[0]), axis=0
+                    )
+                    hdf["labels"][-y_labels.shape[0] :] = y_labels
+
                 n += y.size
                 delta = y - mean
                 mean += delta.sum() / n
                 delta2 = y - mean
                 M2 += (delta * delta2).sum()
-                
+
                 sample_count += y.shape[0]
-            
+
             y, y_labels = process_and_save_audio_helper(
                 file_path=files_to_process[i],
                 label=labels_to_process[i],
                 label_size=label_size,
                 add_noise=add_noise,
             )
-            hdf['features'].resize((hdf['features'].shape[0] + y.shape[0]), axis=0)
-            hdf['features'][-y.shape[0]:] = y
-            
-            hdf['labels'].resize((hdf['labels'].shape[0] + y_labels.shape[0]), axis=0)
-            hdf['labels'][-y_labels.shape[0]:] = y_labels
+            hdf["features"].resize((hdf["features"].shape[0] + y.shape[0]), axis=0)
+            hdf["features"][-y.shape[0] :] = y
+
+            hdf["labels"].resize((hdf["labels"].shape[0] + y_labels.shape[0]), axis=0)
+            hdf["labels"][-y_labels.shape[0] :] = y_labels
             n += y.size
             delta = y - mean
             mean += delta.sum() / n
             delta2 = y - mean
             M2 += (delta * delta2).sum()
-            
+
             sample_count += y.shape[0]
 
-            #Track progress
+            # Track progress
             if i / len(files_to_process) > progress:
-                time_remaining = (len(files_to_process) - i) * (
-                    time.time() - start_time
-                )/i
+                time_remaining = (
+                    (len(files_to_process) - i) * (time.time() - start_time) / i
+                )
                 hours, remainder = divmod(time_remaining, 3600)
                 minutes, seconds = divmod(remainder, 60)
                 # Formatted time output
@@ -144,21 +203,24 @@ def process_and_save_audio_hdf5(
                     f"\r\n\tTraining data creation progress: [{int(progress*100)}%]\n\tTime remaining: {int(hours):02}:{int(minutes):02}:{int(seconds):02}"
                 )
                 progress += 0.1
-                
+
         overall_mean = mean
         overall_stddev = np.sqrt(M2 / n) if n > 1 else 0.0
-        
+
         for i in range(sample_count):
-            hdf['features'][i] = (hdf['features'][i] - overall_mean) / overall_stddev
-                
+            hdf["features"][i] = (hdf["features"][i] - overall_mean) / overall_stddev
+
         hdf.create_dataset(
-            "overall_metadata", data=np.array([overall_mean, overall_stddev, sample_count])
+            "overall_metadata",
+            data=np.array([overall_mean, overall_stddev, sample_count]),
         )
 
         logging.info(f"\n\tTraining data creation progress: [100%]")
 
         # Log progress or any important info
-        logging.info(f"\n\tAudio processing and saving completed successfully.\n\tDataset saved to {output_path} with size {os.path.getsize(output_path)/(1024**2):.2f}MB")
+        logging.info(
+            f"\n\tAudio processing and saving completed successfully.\n\tDataset saved to {output_path} with size {os.path.getsize(output_path)/(1024**2):.2f}MB"
+        )
 
 
 def process_and_save_audio_helper(
@@ -192,7 +254,6 @@ def process_and_save_audio_helper(
     return y, labels
 
 
-
 def create_hdf5(
     Training_Data_Directory: str,
     Training_Data_Sub_Directories: list,
@@ -200,7 +261,6 @@ def create_hdf5(
     sr=22050,
     add_noise=False,
 ):
-    
     """
     Creates an HDF5 file containing audio data for training purposes.
 
@@ -216,7 +276,7 @@ def create_hdf5(
     Logging is used to print out the paths and numeric labels of the training data.
     Finally, it calls a helper function `process_and_save_audio_hdf5` to process the audio files and save them in the specified HDF5 format at the given output path.
     """
-    
+
     Training_Data_Folder_Paths = []
     Training_Data_Folder_Labels = []
 
