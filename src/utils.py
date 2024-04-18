@@ -10,7 +10,7 @@ import h5py
 
 
 def combine_tracks(
-    path_1: str, path_2: str, mult_1=1, mult_2=1, sr=22050
+    path_1: str, path_2: str, mult_1=0.5, mult_2=0.5, sr=22050
 ) -> Tuple[np.array, int]:
     y_1, sr_1 = librosa.load(path_1, sr=sr)
     y_2, sr_2 = librosa.load(path_2, sr=sr)
@@ -191,6 +191,8 @@ def process_and_save_audio_helper(
 
     return y, labels
 
+
+
 def create_hdf5(
     Training_Data_Directory: str,
     Training_Data_Sub_Directories: list,
@@ -198,6 +200,23 @@ def create_hdf5(
     sr=22050,
     add_noise=False,
 ):
+    
+    """
+    Creates an HDF5 file containing audio data for training purposes.
+
+    Parameters:
+    - Training_Data_Directory (str): The root directory containing all the training data subdirectories.
+    - Training_Data_Sub_Directories (list): A list of subdirectory names under the Training_Data_Directory that contain the actual audio files.
+    - output_path (str): The path where the HDF5 file will be saved.
+    - sr (int, optional): The sampling rate to use for audio files. Default is 22050 Hz.
+    - add_noise (bool, optional): A flag indicating whether to add synthetic noise to the audio data. Default is False.
+
+    The function constructs a list of folder paths based on the given subdirectory names, and assigns labels to these folders.
+    Each folder's name is used as a label which is then transformed into numeric format using LabelEncoder.
+    Logging is used to print out the paths and numeric labels of the training data.
+    Finally, it calls a helper function `process_and_save_audio_hdf5` to process the audio files and save them in the specified HDF5 format at the given output path.
+    """
+    
     Training_Data_Folder_Paths = []
     Training_Data_Folder_Labels = []
 
