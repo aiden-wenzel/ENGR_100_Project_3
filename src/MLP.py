@@ -1,11 +1,14 @@
-import utils
+import h5py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import logging
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader, random_split
 from typing import Tuple
 import matplotlib.pyplot as plt
+import torch.optim as optim
+import sys
+from utils import *
 
 class MultiLabelMLP(nn.Module):
     def __init__(self, input_size, hidden_sizes, num_classes):
@@ -36,23 +39,51 @@ class MultiLabelMLP(nn.Module):
         # Apply the output layer
         x = self.output_layer(x)
         return x
+    
+    def save_model(self, path: str):
+        torch.save(self.state_dict(), path)
+        logging.info(f"Model saved to {path}")
+
+
+    def load_model(*parameters, path: str):
+        loaded_model = MultiLabelMLP(parameters)
+
+        # Then, load the saved state dict
+        loaded_model.load_state_dict(torch.load(path))
+
+        return loaded_model
 
 
 class FrameDataset(Dataset):
-    def __init__(self, npz_path):
-        self.data = utils.load_npz_file_with_condition(npz_path, max_size=1024**3)
-        self.keys = [k for k in self.data.keys() if "_data" in k]
-
+    def __init__(self, file_path):
+        """
+        Initialize dataset.
+        :param file_path: Path to the HDF5 file.
+        """
+        self.file_path = file_path
+        self.file = h5py.File(self.file_path, 'r')
+        self.features = self.file['features']
+        self.labels = self.file['labels']
+    
     def __len__(self):
-        return len(self.keys)
-
+        """
+        Return the total number of samples.
+        """
+        return int(self.file['overall_metadata'][2])
+    
     def __getitem__(self, idx):
-        data_key = self.keys[idx]
-        data = self.data[data_key]
-        labels = self.data[f'{data_key.split("_data_")[0]}_labels']
-        return torch.tensor(data.reshape(-1), dtype=torch.float32), torch.tensor(
-            labels, dtype=torch.float32
-        )
+        """
+        Fetch the data and labels at the specified index.
+        """
+        feature = torch.tensor(self.features[idx], dtype=torch.float32).reshape(-1)
+        label = torch.tensor(self.labels[idx], dtype=torch.float32)
+        return feature, label
+    
+    def close(self):
+        """
+        Close the HDF5 file.
+        """
+        self.file.close()
 
 
 def train_model(
@@ -60,6 +91,7 @@ def train_model(
 ) -> Tuple[list, list]:
     train_accuracies = []
     validation_accuracies = []
+    start_time = time.time()
 
     for epoch in range(epochs):
         logging.info(f"Epoch {epoch+1}")
@@ -98,6 +130,16 @@ def train_model(
             validation_accuracy = correct_predictions / total_predictions
             logging.info(f"Validation Accuracy: {validation_accuracy.item()}")
             validation_accuracies.append(validation_accuracy.item())
+            
+        time_remaining = (epochs - (epoch+1)) * (
+            time.time() - start_time
+        )/(epoch+1)
+        hours, remainder = divmod(time_remaining, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        # Formatted time output
+        logging.info(
+            f"Time remaining: {int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+        )
 
     return train_accuracies, validation_accuracies
 
@@ -129,17 +171,3 @@ def test_model(model, test_dataloader):
         logging.info(
             f"Test Accuracy: {(correct_predictions / total_predictions).item()}"
         )
-
-
-def save_model(model, path: str):
-    torch.save(model.state_dict(), path)
-    logging.info(f"Model saved to {path}")
-
-
-def load_model(*parameters, path: str):
-    loaded_model = MultiLabelMLP(parameters)
-
-    # Then, load the saved state dict
-    loaded_model.load_state_dict(torch.load(path))
-
-    return loaded_model
