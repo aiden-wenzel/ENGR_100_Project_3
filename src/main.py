@@ -58,8 +58,9 @@ class MultiLabelCNN(Module):
         return x
     
 # data is a n by 96 by 87 numpy array
-def prediction(model, data) -> list:
+def prediction(model, wav_path: str) -> list:
     classes = ["oboe", "trumpet", "violin"]
+    data = process_audio(wav_path)
     model.eval()  # Set model to evaluation mode
     with torch.no_grad():
         # oboe trumpet violin
@@ -146,8 +147,7 @@ def main():
     model = MultiLabelCNN(3)
     model.load_state_dict(torch.load("../pretrained_models/CNN/cnn_1.pkl"))
     
-    test_spectrogram = process_audio("../test_audio(dev)/oboe/0001.wav")
-    predicted_labels = prediction(model, test_spectrogram)
+    predicted_labels = prediction(model, "../test_audio(dev)/oboe/0001.wav")
 
     # create and title the window
     initiate_app()
