@@ -65,16 +65,29 @@ def prediction(model, data) -> list:
         # oboe trumpet violin
         outputs = model(data)
         
-        predicted_weights = torch.sigmoid(outputs)
-        max_values = np.amax(predicted_weights, axis=0)
-        binary_classifications = max_values > 0.5
-
+        binary_classifications = torch.sigmoid(outputs) > 0.5
+        # max_values = np.amax(predicted_weights, axis=0)
+        # binary_classifications = max_values > 0.5
+        binary_classifications = binary_classifications.numpy()
+        binary_classifications = binary_classifications.squeeze()
         predicted_labels = []
         for i in range(len(binary_classifications)):
-            if binary_classifications[i] == 1:
+            if binary_classifications[i]:
                 predicted_labels.append(classes[i])
         
         return predicted_labels
+
+def process_audio(wav_path: str, sr = 22050):
+    audio_signal_array, sr = librosa.load(wav_path, sr=sr)
+    audio_signal_array = np.pad(
+            audio_signal_array, (0, sr - (audio_signal_array.size % sr)), "constant", constant_values=(0)
+        )
+    spectrogram_matrix = DB_spectogram(audio_signal_array, sr=sr)
+    average_spectrogram = np.mean(spectrogram_matrix, axis=0)
+    average_spectrogram = np.expand_dims(average_spectrogram, axis=0)
+    spectrogram_tensor = torch.tensor(average_spectrogram)
+    spectrogram_tensor = spectrogram_tensor.unsqueeze(0)
+    return spectrogram_tensor
 
 def initiate_app():
     
@@ -131,9 +144,10 @@ def main():
     # load model
     NUM_CLASSES = 3
     model = MultiLabelCNN(3)
-    model = torch.load("../pretrained_models/CNN/cnn_1.pkl")
+    model.load_state_dict(torch.load("../pretrained_models/CNN/cnn_1.pkl"))
     
-    predicted_labels = prediction(model, )
+    test_spectrogram = process_audio("../test_audio(dev)/oboe/0001.wav")
+    predicted_labels = prediction(model, test_spectrogram)
 
     # create and title the window
     initiate_app()
