@@ -7,6 +7,7 @@ from sklearn.preprocessing import LabelEncoder
 import sys
 import time
 import h5py
+import torch
 
 
 def combine_tracks(
@@ -317,3 +318,36 @@ def create_hdf5(
         sr=sr,
         noise=noise,
     )
+
+# data is a n by 96 by 87 numpy array
+def prediction(model, wav_path: str) -> list:
+    classes = ["oboe", "trumpet", "violin"]
+    data = process_audio(wav_path)
+    model.eval()  # Set model to evaluation mode
+    with torch.no_grad():
+        # oboe trumpet violin
+        outputs = model(data)
+        
+        binary_classifications = torch.sigmoid(outputs) > 0.5
+        # max_values = np.amax(predicted_weights, axis=0)
+        # binary_classifications = max_values > 0.5
+        binary_classifications = binary_classifications.numpy()
+        binary_classifications = binary_classifications.squeeze()
+        predicted_labels = []
+        for i in range(len(binary_classifications)):
+            if binary_classifications[i]:
+                predicted_labels.append(classes[i])
+        
+        return predicted_labels
+    
+def process_audio(wav_path: str, sr = 22050):
+    audio_signal_array, sr = librosa.load(wav_path, sr=sr)
+    audio_signal_array = np.pad(
+            audio_signal_array, (0, sr - (audio_signal_array.size % sr)), "constant", constant_values=(0)
+        )
+    spectrogram_matrix = DB_spectogram(audio_signal_array, sr=sr)
+    average_spectrogram = np.mean(spectrogram_matrix, axis=0)
+    average_spectrogram = np.expand_dims(average_spectrogram, axis=0)
+    spectrogram_tensor = torch.tensor(average_spectrogram)
+    spectrogram_tensor = spectrogram_tensor.unsqueeze(0)
+    return spectrogram_tensor
