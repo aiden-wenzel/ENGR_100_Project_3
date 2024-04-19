@@ -57,14 +57,24 @@ class MultiLabelCNN(Module):
         
         return x
     
-def prediction(model, data):
+# data is a n by 96 by 87 numpy array
+def prediction(model, data) -> list:
+    classes = ["oboe", "trumpet", "violin"]
     model.eval()  # Set model to evaluation mode
     with torch.no_grad():
         # oboe trumpet violin
         outputs = model(data)
-        predicted = torch.sigmoid(outputs) > 0.5
-        max_values = np.amax(predicted, axis=0)
-        weights = torch.sigmoid(max_values)
+        
+        predicted_weights = torch.sigmoid(outputs)
+        max_values = np.amax(predicted_weights, axis=0)
+        binary_classifications = max_values > 0.5
+
+        predicted_labels = []
+        for i in range(len(binary_classifications)):
+            if binary_classifications[i] == 1:
+                predicted_labels.append(classes[i])
+        
+        return predicted_labels
 
 def initiate_app():
     
@@ -121,8 +131,9 @@ def main():
     # load model
     NUM_CLASSES = 3
     model = MultiLabelCNN(3)
-    model.load_state_dict(torch.load("./ML/CNN/model_weights.pth"))
-    model.eval()
+    model = torch.load("../pretrained_models/CNN/cnn_1.pkl")
+    
+    predicted_labels = prediction(model, )
 
     # create and title the window
     initiate_app()
