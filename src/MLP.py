@@ -79,6 +79,9 @@ class FrameDataset(Dataset):
         label = torch.tensor(self.labels[idx], dtype=torch.float32)
         return feature, label
     
+    def get_SNR(self) -> float:
+        return self.file['overall_metadata'][3]
+    
     def close(self):
         """
         Close the HDF5 file.
@@ -160,7 +163,7 @@ def plot_accuracy(
     plt.show()
 
 
-def test_model(model, test_dataloader):
+def test_model(model, test_dataloader) -> float:
     model.eval()  # Set model to evaluation mode
     with torch.no_grad():
         correct_predictions = 0
@@ -173,3 +176,4 @@ def test_model(model, test_dataloader):
         logging.info(
             f"Test Accuracy: {(correct_predictions / total_predictions).item()}"
         )
+        return (correct_predictions / total_predictions).item()
