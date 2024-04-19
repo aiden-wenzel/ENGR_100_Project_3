@@ -106,10 +106,12 @@ class FrameDataset(Dataset):
         self.file.close()
 
 def train_model(
-    model, train_dataloader, validation_dataloader, criterion, optimizer, epochs=5
+    model, train_dataloader, validation_dataloader, criterion, optimizer, epochs=20
 ) -> Tuple[list, list]:
     train_accuracies = []
     validation_accuracies = []
+    #Start of time remaining
+    start_time = time.time()
 
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}")
@@ -148,6 +150,17 @@ def train_model(
             validation_accuracy = correct_predictions / total_predictions
             print(f"Validation Accuracy: {validation_accuracy.item()}")
             validation_accuracies.append(validation_accuracy.item())
+            
+        # Time remaining counter
+        time_remaining = (epochs - (epoch+1)) * (
+            time.time() - start_time
+        )/(epoch+1)
+        hours, remainder = divmod(time_remaining, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        # Formatted time output
+        print(
+            f"Time remaining: {int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+        )
 
     return train_accuracies, validation_accuracies
 
