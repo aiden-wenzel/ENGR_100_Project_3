@@ -95,7 +95,7 @@ class FrameDataset(Dataset):
         """
         Fetch the data and labels at the specified index.
         """
-        feature = torch.tensor(self.features[idx], dtype=torch.float32).reshape(-1)
+        feature = torch.tensor(self.features[idx], dtype=torch.float32).reshape(1, 96, 87)
         label = torch.tensor(self.labels[idx], dtype=torch.float32)
         return feature, label
     
@@ -112,7 +112,7 @@ def train_model(
     validation_accuracies = []
 
     for epoch in range(epochs):
-        logging.info(f"Epoch {epoch+1}")
+        print(f"Epoch {epoch+1}")
         model.train()  # Set model to training mode
         total_loss = 0
         correct_predictions = 0
@@ -130,8 +130,8 @@ def train_model(
             total_predictions += torch.numel(labels)
 
         train_accuracy = correct_predictions / total_predictions
-        logging.info(f"Loss: {total_loss}")
-        logging.info(f"Train Accuracy: {train_accuracy.item()}")
+        print(f"Loss: {total_loss}")
+        print(f"Train Accuracy: {train_accuracy.item()}")
         train_accuracies.append(train_accuracy.item())
 
         # Validation phase
@@ -146,7 +146,7 @@ def train_model(
                 total_predictions += torch.numel(labels)
 
             validation_accuracy = correct_predictions / total_predictions
-            logging.info(f"Validation Accuracy: {validation_accuracy.item()}")
+            print(f"Validation Accuracy: {validation_accuracy.item()}")
             validation_accuracies.append(validation_accuracy.item())
 
     return train_accuracies, validation_accuracies
@@ -156,12 +156,12 @@ def load_npz_file_with_condition(file_path, max_size: int):
     file_size = os.path.getsize(file_path)
 
     if file_size > max_size:
-        logging.info(
+        print(
             f"File size is {file_size / (1024**2):.2f}MB. Using mmap_mode='r'."
         )
         data = np.load(file_path, mmap_mode="r", allow_pickle=True)
     else:
-        logging.info(f"File size is {file_size / (1024**2):.2f}MB. Loading normally.")
+        print(f"File size is {file_size / (1024**2):.2f}MB. Loading normally.")
         data = np.load(file_path, allow_pickle=True)
 
     return data
