@@ -1,21 +1,13 @@
 # MODEL DEFINITON
 
-from torch.nn import Module
-from torch.nn import Conv2d
-from torch.nn import Linear
-from torch.nn import MaxPool2d
-from torch.nn import Sequential
-from torch.nn import BatchNorm2d
-from torch.nn import ELU
-from torch import flatten
-from torch import save
-from torch import load
+from torch.nn import Module, Conv2d, Linear, MaxPool2d, Sequential, BatchNorm2d, ELU, BCEWithLogitsLoss
+from torch import flatten, save, load
 import logging
 from utils import *
-from torch.nn import BCEWithLogitsLoss
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader, random_split
 import torch
+import matplotlib.pyplot as plt
 
 class MultiLabelCNN(Module):
     def __init__(self, num_classes):
@@ -150,6 +142,19 @@ def train_model(
             validation_accuracies.append(validation_accuracy.item())
 
     return train_accuracies, validation_accuracies
+
+def plot_accuracy(
+    train_accuracies: list, validation_accuracies: list, epoch_count: int
+):
+    epochs = range(1, epoch_count + 1)
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, train_accuracies, label="Training Accuracy")
+    plt.plot(epochs, validation_accuracies, label="Validation Accuracy")
+    plt.title("Training and Validation Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.legend()
+    plt.show()
 
 def load_npz_file_with_condition(file_path, max_size: int):
 
