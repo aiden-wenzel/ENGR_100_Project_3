@@ -56,6 +56,16 @@ class MultiLabelCNN(Module):
         x = self.linear_layers(x)
         
         return x
+    
+def prediction(model, data):
+    model.eval()  # Set model to evaluation mode
+    with torch.no_grad():
+        # oboe trumpet violin
+        outputs = model(data)
+        predicted = torch.sigmoid(outputs) > 0.5
+        max_values = np.amax(predicted, axis=0)
+        weights = torch.sigmoid(max_values)
+
 def initiate_app():
     
     # helper functions
