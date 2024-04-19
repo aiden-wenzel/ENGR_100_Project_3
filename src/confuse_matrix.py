@@ -15,12 +15,12 @@ class confuse_matrix:
             ouput = model(inputs) # feed forward
 
             output = (torch.max(torch.exp(output), 1)[1]).data.cpu().numpy()
-            y_pred.extend(output) # save prediction
+            self.y_pred.extend(output) # save prediction
 
             labels = labels.data.cpu().numpy()
-            y_true.extend(labels) # save truth
+            self.y_true.extend(labels) # save truth
 
-        self.confuse_matrix = confusion_matrix(y_true, y_pred)
+        self.confuse_matrix = confusion_matrix(self.y_true, self.y_pred)
         self.df_confuse_matrix = pd.DataFrame(
                 self.confuse_matrix / np.sum(self.confuse_matrix, axis=1)[:, None],
                 index = [i for i in classes],
@@ -28,7 +28,7 @@ class confuse_matrix:
         )
 
         self.fig = plt.figure(figsize = (12,7))
-        self.heatmap = sn.heatmap(df_confuse_matrix, annot=True)
+        self.heatmap = sn.heatmap(self.df_confuse_matrix, annot=True)
 
     def show():
         plt.show()
