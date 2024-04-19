@@ -17,6 +17,7 @@ from torch.utils.data import Dataset, DataLoader, random_split
 import torch
 import CNN
 import os
+import MLP
 
 curr = "../sample_audio_training/train/"
 
@@ -59,3 +60,5 @@ train_accuracies, validation_accuracies = CNN.train_model(
 )
 
 model.save_model("./cnn.pkl")
+
+MLP.plot_accuracy(train_accuracies, validation_accuracies, 20)
