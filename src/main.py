@@ -56,17 +56,19 @@ class MultiLabelCNN(Module):
         x = self.linear_layers(x)
         
         return x
+    
+def prediction(model, data):
+    model.eval()  # Set model to evaluation mode
+    with torch.no_grad():
+        # oboe trumpet violin
+        outputs = model(data)
+        predicted = torch.sigmoid(outputs) > 0.5
+        max_values = np.amax(predicted, axis=0)
+        weights = torch.sigmoid(max_values)
 
-
-def main():
-
-    # load model
-    NUM_CLASSES = 3
-    model = MultiLabelCNN(3)
-    model.load_state_dict(torch.load("./ML/CNN/model_weights.pth"))
-    model.eval()
-
-    # initiate app
+def initiate_app():
+    
+    # helper functions
     def print_hello():
         test_output['state'] = 'normal'
         test_output.delete('1.0', tk.END)
@@ -86,7 +88,6 @@ def main():
             input_output_box.insert(tk.END, "No file was selected")
             input_output_box['state'] = 'disabled'
 
-    # create and title the window
     root = tk.Tk()
     root.title("Instrument Recognition")
 
@@ -113,6 +114,18 @@ def main():
     test_output['state'] = 'disabled'
 
     root.mainloop()
+
+
+def main():
+
+    # load model
+    NUM_CLASSES = 3
+    model = MultiLabelCNN(3)
+    model.load_state_dict(torch.load("./ML/CNN/model_weights.pth"))
+    model.eval()
+
+    # create and title the window
+    initiate_app()
 
 if __name__ == "__main__":
     main()
