@@ -57,53 +57,6 @@ class MultiLabelCNN(Module):
         
         return x
 
-class MILR_APP():
-    def __init__(self, root, model, file_path):
-        self.root = root
-        self.setup_ui()
-    
-    def setup_ui(self):
-        self.root.title("Instrument Recognition")
-        self.root.minsize(640, 360)
-        self.root.maxsize(640, 360)
-
-        # test button
-        self.test_button = tk.Button(self.root, text="Test Button", command=self.print_hello)
-        self.test_button.place(x=20, y=180)
-
-        # file prompt button
-        self.file_prompt_button = tk.Button(self.root, text="Input File", command=self.file_prompt)
-        self.file_prompt_button.place(x=20, y=20)
-
-        # file input text box
-        self.input_output_box = tk.Text(self.root, font=("Helvetica", "12"), width=65, height=4)
-        self.input_output_box.place(x=20, y=60)
-        self.input_output_box['state'] = 'disabled'
-
-        # output text box
-        self.test_output = tk.Text(self.root, font=("Helvetica", "16"), width=49, height=4)
-        self.test_output.place(x=20, y=220)
-        self.test_output['state'] = 'disabled'
-
-    def print_hello(self):
-        self.test_output['state'] = 'normal'
-        self.test_output.delete('1.0', tk.END)
-        self.test_output.insert(tk.END, "Bassoon!")
-        self.test_output['state'] = 'disabled'
-
-    def file_prompt(self):
-        self.input_output_box['state'] = 'normal'
-        self.input_output_box.delete('1.0', tk.END)
-        file_path = filedialog.askopenfilename()
-        # Check if a file was selected
-        if file_path:
-            split_path = file_path.split("/", -1)
-            file = split_path[-1]
-            self.input_output_box.insert(tk.END, f"File selected: {file}")
-        else:
-            self.input_output_box.insert(tk.END, "No file was selected")
-        self.input_output_box['state'] = 'disabled'
-
 def initiate_app():
     
     # helper functions
@@ -154,9 +107,66 @@ def initiate_app():
     root.mainloop()
 
 
+
+class MILR_APP():
+    def __init__(self, root, model):
+        self.model = model
+        self.predicted_labels = []
+        self.file_path = ""
+        self.root = root
+        self.setup_ui()
+    
+    def setup_ui(self):
+        self.root.title("Instrument Recognition")
+        self.root.minsize(640, 360)
+        self.root.maxsize(640, 360)
+
+        # test button
+        self.test_button = tk.Button(self.root, text="Test Button", command=self.print_hello)
+        self.test_button.place(x=20, y=180)
+
+        # file prompt button
+        self.file_prompt_button = tk.Button(self.root, text="Input File", command=self.file_prompt)
+        self.file_prompt_button.place(x=20, y=20)
+
+        # file input text box
+        self.input_output_box = tk.Text(self.root, font=("Helvetica", "12"), width=65, height=4)
+        self.input_output_box.place(x=20, y=60)
+        self.input_output_box['state'] = 'disabled'
+
+        # output text box
+        self.test_output = tk.Text(self.root, font=("Helvetica", "16"), width=49, height=4)
+        self.test_output.place(x=20, y=220)
+        self.test_output['state'] = 'disabled'
+
+    def print_hello(self):
+        self.test_output['state'] = 'normal'
+        self.test_output.delete('1.0', tk.END)
+        self.test_output.insert(tk.END, "Bassoon!")
+        self.test_output['state'] = 'disabled'
+
+    def file_prompt(self):
+        self.input_output_box['state'] = 'normal'
+        self.input_output_box.delete('1.0', tk.END)
+        file_path = filedialog.askopenfilename()
+        # Check if a file was selected
+        if file_path:
+            split_path = file_path.split("/", -1)
+            file = split_path[-1]
+            self.input_output_box.insert(tk.END, f"File selected: {file}")
+            self.file_path = file_path
+        else:
+            self.input_output_box.insert(tk.END, "No file was selected")
+
+        self.input_output_box['state'] = 'disabled'
+
 def main():
+    # make model
+    model = MultiLabelCNN(3)
+    model.load_state_dict(torch.load("../pretrained_models/CNN/cnn_1.pkl"))
+
     root = tk.Tk()
-    app = MILR_APP(root)
+    app = MILR_APP(root, model)
     root.mainloop()
 
 if __name__ == "__main__":
