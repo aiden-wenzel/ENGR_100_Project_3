@@ -123,7 +123,7 @@ class MILR_APP():
 def main():
     # make model
     model = MultiLabelCNN(3)
-    model.load_state_dict(torch.load("../pretrained_models/CNN/cnn_1.pkl"))
+    model.load_state_dict(torch.load("../pretrained_models/CNN/cnn.pkl"))
 
     root = tk.Tk()
     app = MILR_APP(root, model)
