@@ -63,7 +63,7 @@ def DB_spectogram(y: np.array, sr=22050) -> np.array:
     )
 
 
-def add_gaussian_noise(data: np.array, std: float) -> np.array:
+def add_gaussian_noise(data: np.array, std: float) -> Tuple[np.array, float]:
     """
     Adds Gaussian noise to an array.
 
@@ -74,8 +74,10 @@ def add_gaussian_noise(data: np.array, std: float) -> np.array:
     Returns:
     - np.array: Noisy version of the input array.
     """
+    original_signal = np.sum(np.square(data))
     noise = np.random.normal(0, std, data.shape)
-    return data + noise
+    noisy_signal = data + noise
+    return noisy_signal, 10 * np.log10(original_signal / np.sum(np.square(noisy_signal)))
 
 
 def process_and_save_audio_hdf5(
@@ -172,8 +174,9 @@ def process_and_save_audio_hdf5(
                 mean += delta.sum() / n
                 delta2 = y - mean
                 M2 += (delta * delta2).sum()
-                avg_SNR = (avg_SNR * (SNR_index - 1) / SNR_index) + SNR / SNR_index
-                SNR_index += 1
+                if(noise is not None):
+                    avg_SNR = (avg_SNR * (SNR_index - 1) / SNR_index) + SNR / SNR_index
+                    SNR_index += 1
 
                 sample_count += y.shape[0]
 
@@ -193,8 +196,9 @@ def process_and_save_audio_hdf5(
             mean += delta.sum() / n
             delta2 = y - mean
             M2 += (delta * delta2).sum()
-            avg_SNR = (avg_SNR * (SNR_index - 1) / SNR_index) + SNR / SNR_index
-            SNR_index += 1
+            if(noise is not None):
+                avg_SNR = (avg_SNR * (SNR_index - 1) / SNR_index) + SNR / SNR_index
+                SNR_index += 1
 
             sample_count += y.shape[0]
 
@@ -255,10 +259,7 @@ def process_and_save_audio_helper(
 
     # Optionally add Gaussian noise
     if noise is not None:
-        original_signal = np.sum(np.square(audio))
-        audio = add_gaussian_noise(audio, noise)
-        noisy_signal = np.sum(np.square(audio))
-        SNR = 10 * np.log10(original_signal / noisy_signal)
+        audio, SNR = add_gaussian_noise(audio, noise)
 
     y = DB_spectogram(audio)
 
