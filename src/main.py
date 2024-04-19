@@ -140,6 +140,13 @@ class MILR_APP():
         self.test_output['state'] = 'disabled'
 
     def print_hello(self):
+        if (self.file_path == 1):
+            print("no file was selected")
+        
+        else:
+            self.predicted_labels = prediction(self.model, self.file_path)
+
+    def output_predicted_values(self):
         self.test_output['state'] = 'normal'
         self.test_output.delete('1.0', tk.END)
         self.test_output.insert(tk.END, "Bassoon!")
