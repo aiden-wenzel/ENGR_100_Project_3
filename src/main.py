@@ -101,7 +101,7 @@ class MILR_APP():
 
         self.predict_labels()
         for label in self.predicted_labels:
-             self.test_output.insert(tk.END, label)
+             self.test_output.insert(tk.END, f"{label} predicted\n")
 
         self.test_output['state'] = 'disabled'
 
