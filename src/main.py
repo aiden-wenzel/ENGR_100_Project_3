@@ -56,39 +56,53 @@ class MultiLabelCNN(Module):
         x = self.linear_layers(x)
         
         return x
-    
-# data is a n by 96 by 87 numpy array
-def prediction(model, wav_path: str) -> list:
-    classes = ["oboe", "trumpet", "violin"]
-    data = process_audio(wav_path)
-    model.eval()  # Set model to evaluation mode
-    with torch.no_grad():
-        # oboe trumpet violin
-        outputs = model(data)
-        
-        binary_classifications = torch.sigmoid(outputs) > 0.5
-        # max_values = np.amax(predicted_weights, axis=0)
-        # binary_classifications = max_values > 0.5
-        binary_classifications = binary_classifications.numpy()
-        binary_classifications = binary_classifications.squeeze()
-        predicted_labels = []
-        for i in range(len(binary_classifications)):
-            if binary_classifications[i]:
-                predicted_labels.append(classes[i])
-        
-        return predicted_labels
 
-def process_audio(wav_path: str, sr = 22050):
-    audio_signal_array, sr = librosa.load(wav_path, sr=sr)
-    audio_signal_array = np.pad(
-            audio_signal_array, (0, sr - (audio_signal_array.size % sr)), "constant", constant_values=(0)
-        )
-    spectrogram_matrix = DB_spectogram(audio_signal_array, sr=sr)
-    average_spectrogram = np.mean(spectrogram_matrix, axis=0)
-    average_spectrogram = np.expand_dims(average_spectrogram, axis=0)
-    spectrogram_tensor = torch.tensor(average_spectrogram)
-    spectrogram_tensor = spectrogram_tensor.unsqueeze(0)
-    return spectrogram_tensor
+class MILR_APP():
+    def __init__(self, root, model, file_path):
+        self.root = root
+        self.setup_ui()
+    
+    def setup_ui(self):
+        self.root.title("Instrument Recognition")
+        self.root.minsize(640, 360)
+        self.root.maxsize(640, 360)
+
+        # test button
+        self.test_button = tk.Button(self.root, text="Test Button", command=self.print_hello)
+        self.test_button.place(x=20, y=180)
+
+        # file prompt button
+        self.file_prompt_button = tk.Button(self.root, text="Input File", command=self.file_prompt)
+        self.file_prompt_button.place(x=20, y=20)
+
+        # file input text box
+        self.input_output_box = tk.Text(self.root, font=("Helvetica", "12"), width=65, height=4)
+        self.input_output_box.place(x=20, y=60)
+        self.input_output_box['state'] = 'disabled'
+
+        # output text box
+        self.test_output = tk.Text(self.root, font=("Helvetica", "16"), width=49, height=4)
+        self.test_output.place(x=20, y=220)
+        self.test_output['state'] = 'disabled'
+
+    def print_hello(self):
+        self.test_output['state'] = 'normal'
+        self.test_output.delete('1.0', tk.END)
+        self.test_output.insert(tk.END, "Bassoon!")
+        self.test_output['state'] = 'disabled'
+
+    def file_prompt(self):
+        self.input_output_box['state'] = 'normal'
+        self.input_output_box.delete('1.0', tk.END)
+        file_path = filedialog.askopenfilename()
+        # Check if a file was selected
+        if file_path:
+            split_path = file_path.split("/", -1)
+            file = split_path[-1]
+            self.input_output_box.insert(tk.END, f"File selected: {file}")
+        else:
+            self.input_output_box.insert(tk.END, "No file was selected")
+        self.input_output_box['state'] = 'disabled'
 
 def initiate_app():
     
@@ -141,16 +155,9 @@ def initiate_app():
 
 
 def main():
-
-    # load model
-    NUM_CLASSES = 3
-    model = MultiLabelCNN(3)
-    model.load_state_dict(torch.load("../pretrained_models/CNN/cnn_1.pkl"))
-    
-    predicted_labels = prediction(model, "../test_audio(dev)/oboe/0001.wav")
-
-    # create and title the window
-    initiate_app()
+    root = tk.Tk()
+    app = MILR_APP(root)
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
