@@ -63,13 +63,13 @@ def DB_spectogram(y: np.array, sr=22050) -> np.array:
     )
 
 
-def add_gaussian_noise(data: np.array, std=0.005):
+def add_gaussian_noise(data: np.array, std: float) -> np.array:
     """
     Adds Gaussian noise to an array.
 
     Parameters:
     - data (np.array): Array of audio data.
-    - std (float, optional): Standard deviation of the Gaussian noise. Default is 0.005.
+    - std (float): Standard deviation of the Gaussian noise.
 
     Returns:
     - np.array: Noisy version of the input array.
@@ -79,8 +79,8 @@ def add_gaussian_noise(data: np.array, std=0.005):
 
 
 def process_and_save_audio_hdf5(
-    files: list, labels: list, output_path: str, sr=22050, add_noise=False
-):
+    files: list, labels: list, output_path: str, sr=22050, noise: float = None
+) -> None:
     """
     Processes a list of audio files and their labels, and saves the resulting dataset in an HDF5 file format.
 
@@ -89,7 +89,7 @@ def process_and_save_audio_hdf5(
     - labels (list): A list of labels corresponding to the audio files. Each label should correspond to the directory or file in the 'files' list.
     - output_path (str): The path where the HDF5 file will be saved.
     - sr (int, optional): Sampling rate to be used for audio files. Default is 22050 Hz.
-    - add_noise (bool, optional): If True, adds Gaussian noise to the audio data. Default is False.
+    - noise (float, optional): If provided, adds Gaussian noise to the audio data with parameter as standard deviation. Default is None / 0.
 
     This function iterates through each audio file, generates spectrograms, optionally adds noise, and saves these features along with their labels into an HDF5 file. If the file path is a directory, it processes all audio files within that directory. The function uses a helper function to generate spectrograms and to handle audio combinations. It also calculates and stores overall dataset statistics such as mean and standard deviation for normalization purposes.
 
@@ -127,16 +127,18 @@ def process_and_save_audio_hdf5(
         n = 0
         mean = 0
         M2 = 0
+        avg_SNR = 0.0
+        SNR_index = 1
 
         for i in range(len(files_to_process)):
             for j in range(i + 1, len(files_to_process)):
-                y, y_labels = process_and_save_audio_helper(
+                y, y_labels, SNR = process_and_save_audio_helper(
                     file_path=files_to_process[i],
                     file_path_2=files_to_process[j],
                     label=labels_to_process[i],
                     label_2=labels_to_process[j],
                     label_size=label_size,
-                    add_noise=add_noise,
+                    noise=noise,
                 )
                 if sample_count == 0:
                     hdf.create_dataset(
@@ -164,19 +166,22 @@ def process_and_save_audio_hdf5(
                     )
                     hdf["labels"][-y_labels.shape[0] :] = y_labels
 
+                # Calculate metadata of overall mean, overall standard deviation, and overall SNR
                 n += y.size
                 delta = y - mean
                 mean += delta.sum() / n
                 delta2 = y - mean
                 M2 += (delta * delta2).sum()
+                avg_SNR = (avg_SNR * (SNR_index - 1) / SNR_index) + SNR / SNR_index
+                SNR_index += 1
 
                 sample_count += y.shape[0]
 
-            y, y_labels = process_and_save_audio_helper(
+            y, y_labels, SNR = process_and_save_audio_helper(
                 file_path=files_to_process[i],
                 label=labels_to_process[i],
                 label_size=label_size,
-                add_noise=add_noise,
+                noise=noise,
             )
             hdf["features"].resize((hdf["features"].shape[0] + y.shape[0]), axis=0)
             hdf["features"][-y.shape[0] :] = y
@@ -188,6 +193,8 @@ def process_and_save_audio_hdf5(
             mean += delta.sum() / n
             delta2 = y - mean
             M2 += (delta * delta2).sum()
+            avg_SNR = (avg_SNR * (SNR_index - 1) / SNR_index) + SNR / SNR_index
+            SNR_index += 1
 
             sample_count += y.shape[0]
 
@@ -212,7 +219,11 @@ def process_and_save_audio_hdf5(
 
         hdf.create_dataset(
             "overall_metadata",
-            data=np.array([overall_mean, overall_stddev, sample_count]),
+            data=np.array([overall_mean, overall_stddev, sample_count, avg_SNR]),
+        )
+        
+        logging.info(
+            f"\n\tMetadata: {[overall_mean, overall_stddev, sample_count, avg_SNR]}"
         )
 
         logging.info(f"\n\tTraining data creation progress: [100%]")
@@ -230,8 +241,8 @@ def process_and_save_audio_helper(
     file_path_2: str = None,
     label_2: int = None,
     sr=22050,
-    add_noise=False,
-):
+    noise: float = None,
+) -> Tuple[np.array, np.array, float]:
     if file_path_2 is not None:
         audio, _ = combine_tracks(file_path, file_path_2, sr=sr)
     else:
@@ -240,9 +251,14 @@ def process_and_save_audio_helper(
             audio, (0, sr - (audio.size % sr)), "constant", constant_values=(0)
         )
 
+    SNR = 0.0
+
     # Optionally add Gaussian noise
-    if add_noise:
-        audio = add_gaussian_noise(audio)
+    if noise is not None:
+        original_signal = np.sum(np.square(audio))
+        audio = add_gaussian_noise(audio, noise)
+        noisy_signal = np.sum(np.square(audio))
+        SNR = 10 * np.log10(original_signal / noisy_signal)
 
     y = DB_spectogram(audio)
 
@@ -251,7 +267,7 @@ def process_and_save_audio_helper(
     if label_2 is not None:
         labels[:, label_2] = True
 
-    return y, labels
+    return y, labels, SNR
 
 
 def create_hdf5(
@@ -259,7 +275,7 @@ def create_hdf5(
     Training_Data_Sub_Directories: list,
     output_path: str,
     sr=22050,
-    add_noise=False,
+    noise:float = None,
 ):
     """
     Creates an HDF5 file containing audio data for training purposes.
@@ -298,5 +314,5 @@ def create_hdf5(
         labels=Training_Data_Folder_Numeric_Labels,
         output_path=output_path,
         sr=sr,
-        add_noise=add_noise,
+        noise=noise,
     )
