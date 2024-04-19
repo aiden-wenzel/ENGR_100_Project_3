@@ -22,10 +22,10 @@ curr = "../sample_audio_training/train/"
 
 folders = ['oboe', 'trumpet', 'violin']
 
-utils.create_hdf5("../sample_audio_training/train", folders, "data.hpy5")
+utils.create_hdf5("../sample_audio_training/train", folders, "data.h5")
 
-hpy5_path = "./data.hpy5"
-mel_dataset = CNN.FrameDataset(hpy5_path)
+h5_path = "./data.h5"
+mel_dataset = CNN.FrameDataset(h5_path)
 
 print("split dataset")
 # split dataset into training, validation, and testing
