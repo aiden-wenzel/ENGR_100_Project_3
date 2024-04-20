@@ -13,11 +13,11 @@ After downloading Python, either run `git clone https://github.com/aiden-wenzel/
 
 ## 1.3 Install Required Packages
 
-Once the files have been downloaded, open the terminal in the folder where `app.py` and `requirements.txt` are. 
+Once the files have been downloaded, open the terminal in the folder where `requirements.txt` is. 
 
 Then run the following command
-`python -m pip install -r requirements.txt`. This command will install all the required python packages and allow you to run `app.py`. 
+`python -m pip install -r requirements.txt`. This command will install all the required python packages and allow you to run `main.py`. 
 
 ## 1.4 Running the Application
 
-In the terminal, make sure that you are in the `app.py` directory. Then run `python app.py`. This should run the file and then open the GUI window.
+In the terminal, type `cd src`. After that type, `python main.py`. This should run the main script and open the GUI.
