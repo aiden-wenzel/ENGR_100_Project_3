@@ -2,6 +2,7 @@
 
 from torch.nn import Module, Conv2d, Linear, MaxPool2d, Sequential, BatchNorm2d, ELU, BCEWithLogitsLoss
 from torch import flatten, save, load
+import torch
 import logging
 from utils import *
 import torch.optim as optim
@@ -183,3 +184,18 @@ def load_npz_file_with_condition(file_path, max_size: int):
         data = np.load(file_path, allow_pickle=True)
 
     return data
+
+def test_model(model, test_dataloader) -> float:
+    model.eval()  # Set model to evaluation mode
+    with torch.no_grad():
+        correct_predictions = 0
+        total_predictions = 0
+        for data, labels in test_dataloader:
+            outputs = model(data)
+            predicted = torch.sigmoid(outputs) > 0.5
+            correct_predictions += (predicted == labels).float().sum()
+            total_predictions += torch.numel(labels)
+        logging.info(
+            f"Test Accuracy: {(correct_predictions / total_predictions).item()}"
+        )
+        return (correct_predictions / total_predictions).item()
