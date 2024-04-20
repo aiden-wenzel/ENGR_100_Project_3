@@ -66,12 +66,12 @@ class MILR_APP():
         self.setup_ui()
     
     def setup_ui(self):
-        self.root.title("Instrument Recognition")
+        self.root.title("MLIR")
         self.root.minsize(640, 360)
         self.root.maxsize(640, 360)
 
         # test button
-        self.test_button = tk.Button(self.root, text="Test Button", command=self.output_predicted_values)
+        self.test_button = tk.Button(self.root, text="Predict", command=self.output_predicted_values)
         self.test_button.place(x=20, y=180)
 
         # file prompt button
